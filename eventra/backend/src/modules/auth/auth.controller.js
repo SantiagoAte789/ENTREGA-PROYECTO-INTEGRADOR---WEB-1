@@ -1,0 +1,17 @@
+const service = require('./auth.service');
+
+exports.login = async (req, res, next) => {
+  try {
+    res.json(await service.login(req.body));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.register = async (req, res, next) => {
+  try {
+    res.status(201).json(await service.register(req.body));
+  } catch (e) {
+    next(e);
+  }
+};
