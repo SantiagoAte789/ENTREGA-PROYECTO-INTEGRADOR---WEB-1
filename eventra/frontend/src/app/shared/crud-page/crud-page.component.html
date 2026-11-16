@@ -1,0 +1,102 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">{{ config.title }}</h3>
+    @if (config.canCreate !== false) {
+      <button class="btn btn-primary" (click)="openNew()">Nuevo {{ config.singular }}</button>
+    }
+  </div>
+
+  @if (message()) { <div class="alert alert-success">{{ message() }}</div> }
+  @if (error()) { <div class="alert alert-danger">{{ error() }}</div> }
+
+  @if (showForm()) {
+    <form class="card card-body mb-4" #f="ngForm" (ngSubmit)="save()">
+      <h5 class="mb-3">{{ editingId === null ? 'Registrar' : 'Editar' }} {{ config.singular }}</h5>
+      <div class="row g-3">
+        @for (field of fields(); track field.key) {
+          <div [class]="field.type === 'textarea' || field.type === 'phones' ? 'col-12' : 'col-md-4'">
+            @if (field.type === 'checkbox') {
+              <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" [id]="field.key" [name]="field.key" [(ngModel)]="model[field.key]">
+                <label class="form-check-label" [attr.for]="field.key">{{ field.label }}</label>
+              </div>
+            } @else {
+              <label class="form-label" [attr.for]="field.key">{{ field.label }}</label>
+              @switch (field.type) {
+                @case ('textarea') {
+                  <textarea class="form-control" rows="2" [id]="field.key" [name]="field.key"
+                            [(ngModel)]="model[field.key]" [required]="isRequired(field)"></textarea>
+                }
+                @case ('select') {
+                  <select class="form-select" [id]="field.key" [name]="field.key"
+                          [(ngModel)]="model[field.key]" [required]="isRequired(field)">
+                    <option [ngValue]="undefined">-- Seleccione --</option>
+                    @for (o of optionsFor(field); track o.value) {
+                      <option [ngValue]="o.value">{{ o.label }}</option>
+                    }
+                  </select>
+                }
+                @case ('datetime') {
+                  <input class="form-control" type="datetime-local" [id]="field.key" [name]="field.key"
+                         [(ngModel)]="model[field.key]" [required]="isRequired(field)">
+                }
+                @case ('number') {
+                  <input class="form-control" type="number" step="any" [id]="field.key" [name]="field.key"
+                         [(ngModel)]="model[field.key]" [required]="isRequired(field)">
+                }
+                @default {
+                  <input class="form-control" [type]="inputType(field)" [id]="field.key" [name]="field.key"
+                         [(ngModel)]="model[field.key]" [required]="isRequired(field)"
+                         [attr.autocomplete]="field.type === 'password' ? 'new-password' : null">
+                }
+              }
+            }
+          </div>
+        }
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-success me-2" type="submit" [disabled]="f.invalid">Guardar</button>
+        <button class="btn btn-secondary" type="button" (click)="cancel()">Cancelar</button>
+      </div>
+    </form>
+  }
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle bg-white">
+      <thead class="table-dark">
+        <tr>
+          @for (c of config.columns; track c.key) { <th>{{ c.label }}</th> }
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r[config.pk]) {
+          <tr>
+            @for (c of config.columns; track c.key) {
+              <td>
+                @switch (c.type) {
+                  @case ('date') { {{ r[c.key] | date: 'medium' }} }
+                  @case ('money') { {{ r[c.key] | currency: 'COP' : 'symbol-narrow' : '1.0-0' }} }
+                  @case ('bool') { {{ r[c.key] ? 'Sí' : 'No' }} }
+                  @case ('list') { {{ (r[c.key] || []).join(', ') }} }
+                  @case ('badge') { <span [class]="'badge ' + badge(r[c.key])">{{ r[c.key] }}</span> }
+                  @default { {{ r[c.key] }} }
+                }
+              </td>
+            }
+            <td class="text-nowrap">
+              @if (config.canEdit !== false) {
+                <button class="btn btn-sm btn-outline-primary me-1" (click)="openEdit(r)">Editar</button>
+              }
+              @if (config.canDelete !== false) {
+                <button class="btn btn-sm btn-outline-danger" (click)="remove(r)">Eliminar</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="config.columns.length + 1" class="text-center text-muted">Sin registros</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
